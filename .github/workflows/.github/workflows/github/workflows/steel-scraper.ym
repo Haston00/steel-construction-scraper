@@ -1,0 +1,55 @@
+name: Steel Construction Data Scraper
+
+on:
+  workflow_dispatch:
+    inputs:
+      collection_type:
+        description: 'Type of collection'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+        - test
+        - full
+  
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  scrape-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-jre
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4 pandas PyPDF2 lxml
+    
+    - name: Create output directory
+      run: mkdir -p steel_construction_data/{raw_documents,processed_data,reports,logs}
+    
+    - name: Run scraper
+      run: |
+        if [ "${{ github.event.inputs.collection_type }}" = "full" ]; then
+          python steel_construction_scraper.py --automated --full
+        else
+          python steel_construction_scraper.py --automated --test
+        fi
+    
+    - name: Upload results
+      uses: actions/upload-artifact@v3
+      with:
+        name: steel-construction-data
+        path: steel_construction_data/
+        retention-days: 30
