@@ -1,0 +1,41 @@
+name: Steel Construction Data Scraper
+
+on:
+  workflow_dispatch:
+    inputs:
+      collection_type:
+        description: 'Collection type'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+        - test
+        - full
+
+jobs:
+  scrape-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        pip install requests beautifulsoup4 pandas PyPDF2 lxml
+    
+    - name: Run scraper
+      run: |
+        mkdir -p steel_construction_data
+        python steel_construction_scraper.py --automated --test
+    
+    - name: Upload results
+      uses: actions/upload-artifact@v3
+      with:
+        name: steel-data
+        path: steel_construction_data/
