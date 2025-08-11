@@ -1,128 +1,41 @@
-#!/usr/bin/env python3
-"""
-Super Simple Steel Construction Scraper - Debugging Version
-"""
+name: Steel Construction Data Scraper
 
-import requests
-import pandas as pd
-import json
-import sys
-import argparse
-from pathlib import Path
-from datetime import datetime
+on:
+  workflow_dispatch:
+    inputs:
+      collection_type:
+        description: 'Collection type'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - full
 
-def main():
-    print("🏗️ Steel Construction Scraper Starting...")
+jobs:
+  scrape-data:
+    runs-on: ubuntu-latest
     
-    # Parse arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--automated', action='store_true')
-    parser.add_argument('--test', action='store_true') 
-    parser.add_argument('--full', action='store_true')
-    args = parser.parse_args()
-    
-    # Create output directory
-    output_dir = Path("steel_construction_data")
-    output_dir.mkdir(exist_ok=True)
-    (output_dir / "processed_data").mkdir(exist_ok=True)
-    (output_dir / "reports").mkdir(exist_ok=True)
-    
-    print(f"✅ Created output directory: {output_dir}")
-    
-    # Test our tools
-    try:
-        import requests
-        print("✅ Requests library working")
-        
-        import pandas as pd
-        print("✅ Pandas library working")
-        
-        # Test a simple web request
-        print("🌐 Testing web connection...")
-        response = requests.get("https://httpbin.org/json", timeout=10)
-        if response.status_code == 200:
-            print("✅ Web connection working")
-        else:
-            print(f"⚠️ Web connection issue: {response.status_code}")
-            
-    except Exception as e:
-        print(f"❌ Error testing tools: {e}")
-        return 1
-    
-    # Create sample data to prove it works
-    print("📊 Creating sample data...")
-    
-    sample_data = [
-        {
-            "project_name": "UNC Charlotte Richardson Stadium - Structural Steel",
-            "bidder": "North State Steel",
-            "category": "structural_steel", 
-            "bid_amount": 7764425,
-            "collection_date": datetime.now().isoformat()
-        },
-        {
-            "project_name": "UNC Charlotte Richardson Stadium - Structural Steel", 
-            "bidder": "SteelFab Inc",
-            "category": "structural_steel",
-            "bid_amount": 8501110,
-            "collection_date": datetime.now().isoformat()
-        },
-        {
-            "project_name": "UNC Charlotte Richardson Stadium - Deep Foundations",
-            "bidder": "Richard Goettle Inc", 
-            "category": "deep_foundations",
-            "bid_amount": 1632700,
-            "collection_date": datetime.now().isoformat()
-        },
-        {
-            "project_name": "UNC Charlotte Richardson Stadium - Cast in Place",
-            "bidder": "JC Building Inc",
-            "category": "cast_in_place_concrete", 
-            "bid_amount": 1818049,
-            "collection_date": datetime.now().isoformat()
-        }
-    ]
-    
-    # Save as CSV
-    df = pd.DataFrame(sample_data)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_file = output_dir / "processed_data" / f"steel_bids_sample_{timestamp}.csv"
-    df.to_csv(csv_file, index=False)
-    print(f"✅ Saved CSV: {csv_file}")
-    
-    # Save as JSON
-    json_file = output_dir / "processed_data" / f"steel_bids_sample_{timestamp}.json"
-    with open(json_file, 'w') as f:
-        json.dump(sample_data, f, indent=2)
-    print(f"✅ Saved JSON: {json_file}")
-    
-    # Create summary report
-    summary = {
-        "collection_date": datetime.now().isoformat(),
-        "collection_type": "sample_test",
-        "total_observations": len(sample_data),
-        "categories": {
-            "structural_steel": 2,
-            "deep_foundations": 1, 
-            "cast_in_place_concrete": 1
-        },
-        "unique_projects": 1,
-        "unique_bidders": 4,
-        "status": "success"
-    }
-    
-    summary_file = output_dir / "reports" / f"summary_{timestamp}.json"
-    with open(summary_file, 'w') as f:
-        json.dump(summary, f, indent=2)
-    print(f"✅ Saved summary: {summary_file}")
-    
-    print("🎉 Test completed successfully!")
-    print(f"📁 Files created in: {output_dir}")
-    print(f"📊 Sample data: {len(sample_data)} bid observations")
-    print("🔄 Ready for real data collection!")
-    
-    return 0
-
-if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests pandas
+      
+      - name: Run scraper
+        run: |
+          mkdir -p steel_construction_data
+          python steel_construction_scraper.py --automated --test
+      
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: steel-data
+          path: steel_construction_data/
