@@ -35,7 +35,7 @@ jobs:
         python steel_construction_scraper.py --automated --test
     
     - name: Upload results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: steel-data
         path: steel_construction_data/
